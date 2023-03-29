@@ -10,8 +10,8 @@ desired_caps = {
     'platformName': 'Android',  # 被测手机是安卓
     'platformVersion': '8',  # 手机安卓版本
     'deviceName': 'Mi_10',  # 设备名，安卓手机可以随意填写
-    'appPackage': 'cn.xuexi.android',  # 启动APP Package名称
-    'appActivity': 'com.alibaba.android.rimet.biz.SplashActivity',  # 启动Activity名称
+    # 'appPackage': 'cn.xuexi.android',  # 启动APP Package名称
+    # 'appActivity': 'com.alibaba.android.rimet.biz.SplashActivity',  # 启动Activity名称
     'noReset': True,  # 不要重置App
     'newCommandTimeout': 10000,
     # 'automationName': 'UiAutomator2',
@@ -36,7 +36,7 @@ driver.implicitly_wait(5)
 def swipe(lengh, duration=800):
     driver.swipe(start_x=500, start_y=1500, end_x=500, end_y=1500 - lengh, duration=duration)
 
-
+"""
 # 学文章
 def study_article():
     def once_read(article_node: WebElement):
@@ -128,6 +128,8 @@ def dati_test(fn):
     driver.press_keycode(AndroidKey.BACK)
     time.sleep(0.5)
     driver.press_keycode(AndroidKey.BACK)
+    time.sleep(0.5)
+    driver.press_keycode(AndroidKey.BACK)
 
 
 @dati_test
@@ -140,8 +142,12 @@ def daily_test():
     def test_contr():
         qus_type = driver.find_element(By.XPATH,
                                        '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.view.View[1]/android.view.View[1]').text
-        qus_text = driver.find_element(By.XPATH,
-                                       '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.view.View[2]').text
+        if qus_type == "填空题":
+            qus_text = driver.find_element(By.XPATH,
+                                           '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.view.View[2]/android.view.View').text
+        else:
+            qus_text = driver.find_element(By.XPATH,
+                                           '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.view.View[2]').text
 
         # 获取提示文本并获取答案
         # 显示提示
@@ -155,12 +161,11 @@ def daily_test():
         driver.find_element(By.XPATH,
                             '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View[3]/android.view.View[1]/android.view.View[2]').click()
         # 获取答案
-        if tips_text == '请观看视频':
-            anser_list = get_anser(qus_text)
-        else:
+        anser_list = get_anser(qus_text)
+        if not anser_list:
             anser_list = get_string_diff(qus_text, tips_text)
 
-        if qus_type == '单选题' or qus_type == '多选题':
+        if qus_type == '单选题':
             # 获取题目答案选项
             sec_list_node = driver.find_elements(By.XPATH,
                                                  '//android.widget.ListView/android.view.View/android.view.View/android.view.View[2]')
@@ -174,8 +179,17 @@ def daily_test():
             if not right_anser_list:
                 driver.find_element(By.XPATH,
                                     '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.widget.ListView/android.view.View[1]/android.view.View').click()
+        elif qus_type == '多选题':
+            select_node = driver.find_elements(By.XPATH,
+                                               '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.widget.ListView/android.view.View')
+            for each in select_node:
+                each.click()
+                time.sleep(0.3)
 
-        elif qus_type == '填充题':
+
+            pass
+
+        elif qus_type == '填空题':
             if anser_list:
                 driver.find_element(By.XPATH, '//android.widget.EditText').send_keys(anser_list[0])
             else:
@@ -193,11 +207,12 @@ def daily_test():
         if i == 4:
             driver.find_element(By.XPATH, '//android.view.View[@text="完成"]').click()
 
-
+"""
 pass
 # study_article()
 # watch_video()
-daily_test()
+# daily_test()
 pass
 
 driver.quit()
+driver.get('www.google.com')
