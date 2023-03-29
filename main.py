@@ -3,7 +3,7 @@ import time
 from appium import webdriver
 from selenium.webdriver.common.by import By
 from appium.webdriver.extensions.android.nativekey import AndroidKey
-from tools import get_anser
+from tools import get_anser, get_string_diff
 from appium.webdriver.webelement import WebElement
 
 desired_caps = {
@@ -34,7 +34,7 @@ driver.implicitly_wait(5)
 
 
 def swipe(lengh, duration=800):
-    driver.swipe(start_x=500, start_y=1037, end_x=500, end_y=1037 - lengh, duration=duration)
+    driver.swipe(start_x=500, start_y=1500, end_x=500, end_y=1500 - lengh, duration=duration)
 
 
 # 学文章
@@ -107,24 +107,97 @@ def watch_video():
         time.sleep(1)
 
 
-# 挑战答题
-def tiaozhan_test():
+# 答题操作函数
+def dati_test(fn):
+    # 进入我的
     driver.find_element(By.ID, 'comm_head_xuexi_mine').click()
     time.sleep(0.5)
-    driver.tap([(363, 600)])
+    # 点击我要答题
+    driver.tap([(546, 600)])
+    time.sleep(1)
+    # 检测是否是弹窗
+    try:
+        close_btn = driver.find_element(By.XPATH, '//android.view.View[@text="去看看"]/../../android.view.View')
+    except:
+        pass
+    else:
+        close_btn.click()
+        time.sleep(0.5)
+    # 外部函数，各种答题
+    fn()
+    driver.press_keycode(AndroidKey.BACK)
     time.sleep(0.5)
-    driver.find_element(By.XPATH,'//android.view.View/android.view.View/android.view.View[3]/android.view.View[11]')
-    pass
+    driver.press_keycode(AndroidKey.BACK)
+
+
+@dati_test
+def daily_test():
+    # 进入每日答题
+    driver.find_element(By.XPATH,
+                        '//android.webkit.WebView/android.view.View/android.view.View/android.view.View[3]/android.view.View[3]').click()
+    time.sleep(0.5)
+
+    def test_contr():
+        qus_type = driver.find_element(By.XPATH,
+                                       '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.view.View[1]/android.view.View[1]').text
+        qus_text = driver.find_element(By.XPATH,
+                                       '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.view.View[2]').text
+
+        # 获取提示文本并获取答案
+        # 显示提示
+        driver.find_element(By.XPATH,
+                            '//android.view.View[@text="查看提示"]/..').click()
+        time.sleep(0.8)
+        tips_text = driver.find_element(By.XPATH,
+                                        '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View[3]/android.view.View[2]/android.view.View').text
+        time.sleep(0.8)
+        # 关闭提示
+        driver.find_element(By.XPATH,
+                            '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View[3]/android.view.View[1]/android.view.View[2]').click()
+        # 获取答案
+        if tips_text == '请观看视频':
+            anser_list = get_anser(qus_text)
+        else:
+            anser_list = get_string_diff(qus_text, tips_text)
+
+        if qus_type == '单选题' or qus_type == '多选题':
+            # 获取题目答案选项
+            sec_list_node = driver.find_elements(By.XPATH,
+                                                 '//android.widget.ListView/android.view.View/android.view.View/android.view.View[2]')
+            sec_list = []
+            for each in sec_list_node:
+                sec_list.append(each.text)
+            right_anser_list = list(set(sec_list) & set(anser_list))
+            for i in right_anser_list:
+                driver.find_element(By.XPATH, f'//android.view.View[@text="{i}"]').click()
+                time.sleep(0.2)
+            if not right_anser_list:
+                driver.find_element(By.XPATH,
+                                    '//android.webkit.WebView/android.view.View/android.view.View[2]/android.view.View/android.view.View/android.widget.ListView/android.view.View[1]/android.view.View').click()
+
+        elif qus_type == '填充题':
+            if anser_list:
+                driver.find_element(By.XPATH, '//android.widget.EditText').send_keys(anser_list[0])
+            else:
+                driver.find_element(By.XPATH, '//android.widget.EditText').send_keys('强国')
+            time.sleep(0.2)
+
+        driver.find_element(By.XPATH, '//android.view.View[@text="确定"]').click()
+        try:
+            driver.find_element(By.XPATH, '//android.view.View[@text="下一题"]').click()
+        except:
+            pass
+
+    for i in range(5):
+        test_contr()
+        if i == 4:
+            driver.find_element(By.XPATH, '//android.view.View[@text="完成"]').click()
 
 
 pass
 # study_article()
 # watch_video()
-tiaozhan_test()
+daily_test()
 pass
-# xx = driver.find_element(By.XPATH,'//android.widget.HorizontalScrollView/android.widget.LinearLayout')
-# aa = xx.screenshot_as_png
-# with open('11.png',mode='wb') as f:
-#     f.write(aa)
 
 driver.quit()
